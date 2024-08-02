@@ -1,1 +1,5 @@
-t
+streamlit
+pandas
+Pillow
+psycopg2-binary
+streamlit-quill
