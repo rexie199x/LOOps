@@ -151,10 +151,24 @@ def show_processes(section):
     end_idx = start_idx + items_per_page
     page_processes = processes[start_idx:end_idx]
 
+    # Inject custom CSS for title size
+    st.markdown(
+        """
+        <style>
+        .custom-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
     # Display processes
     for i, process in enumerate(page_processes):
         expander = st.expander(f"{process['title']}", expanded=False)
         with expander:
+            st.markdown(f"<div class='custom-title'>{process['title']}</div>", unsafe_allow_html=True)
             st.write(process['content'])
 
             col1, col2, col3 = st.columns([1, 1, 6])
