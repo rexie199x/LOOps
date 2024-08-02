@@ -238,9 +238,9 @@ def main():
         }
         .full-screen-iframe {
             position: fixed;
-            top: 10;
+            top: 0;
             left: 330px;
-            width: calc(100% - 360px);
+            width: calc(100% - 350px);
             height: calc(100% - 20px);
             border: none;
             z-index: 9999;
