@@ -222,7 +222,7 @@ def show_processes(section):
 # Main function to run the app
 def main():
       # Add the logo at the top of the sidebar
-    st.sidebar.image("https://lonelyoctopus.s3.eu-north-1.amazonaws.com/LOOPS.png", width=270)
+    st.sidebar.image("https://lonelyoctopus.s3.eu-north-1.amazonaws.com/LOOPS.png", width=280)
     st.sidebar.title("Menu")
     
     # Inject custom CSS
