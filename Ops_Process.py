@@ -221,7 +221,7 @@ def show_processes(section):
 
 # Main function to run the app
 def main():
-      # Add the logo at the top of the sidebar
+    # Add the logo at the top of the sidebar
     st.sidebar.image("https://lonelyoctopus.s3.eu-north-1.amazonaws.com/LOOPS.png", width=280)
     st.sidebar.title("Menu")
     
@@ -248,9 +248,12 @@ def main():
         .custom-padding {
             padding: 5px !important;
         }
-        .css-fblp2m {
+        .css-1d391kg {
             width: 330px !important;
             position: fixed !important;
+            top: 0;
+            left: 0;
+            height: 100vh;
         }
         .css-18ni7ap {
             margin-left: 330px !important;
