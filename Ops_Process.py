@@ -258,6 +258,9 @@ def main():
         .css-18ni7ap {
             margin-left: 330px !important;
         }
+        .css-15tx938, .css-1rs6os.edgvbvh10 {
+            display: none !important;
+        }
         </style>
         """,
         unsafe_allow_html=True
