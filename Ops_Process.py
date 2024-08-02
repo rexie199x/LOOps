@@ -239,7 +239,7 @@ def main():
         .full-screen-iframe {
             position: fixed;
             top: 10;
-            left: 350px;
+            left: 330px;
             width: calc(100% - 360px);
             height: calc(100% - 20px);
             border: none;
