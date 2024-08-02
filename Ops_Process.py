@@ -248,6 +248,13 @@ def main():
         .custom-padding {
             padding: 5px !important;
         }
+        .css-fblp2m {
+            width: 330px !important;
+            position: fixed !important;
+        }
+        .css-18ni7ap {
+            margin-left: 330px !important;
+        }
         </style>
         """,
         unsafe_allow_html=True
