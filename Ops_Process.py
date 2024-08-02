@@ -240,8 +240,8 @@ def main():
             position: fixed;
             top: 5;
             left: 330px;
-            width: calc(100% - 350px);
-            height: calc(100% - 20px);
+            width: calc(90% - 350px);
+            height: calc(90% - 20px);
             border: none;
             z-index: 9999;
         }
