@@ -241,7 +241,7 @@ def main():
             top: 20;
             left: 360px;
             width: 1500px;
-            height: 900px;
+            height: 810px;
             border: none;
             z-index: 9999;
         }
