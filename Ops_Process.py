@@ -321,7 +321,7 @@ def show_checklist():
     tasks = st.session_state.tasks
 
     # Calculate completion percentage
-    completed_tasks = sum(task['completed'] for task in tasks)
+    completed_tasks = sum(1 for task in tasks if task['completed'])
     total_tasks = len(tasks)
     progress = completed_tasks / total_tasks if total_tasks > 0 else 0
 
@@ -337,9 +337,13 @@ def show_checklist():
             is_completed = st.checkbox(task_title, value=task['completed'], key=task_title)
             if is_completed != task['completed']:
                 update_checklist_task(task_title, is_completed)
+                # Refresh task list after update
+                st.session_state.tasks = load_checklist_tasks()
         with col2:
             if st.button("Delete", key=f"delete_{task_title}"):
                 delete_checklist_task(task_title)
+                # Refresh task list after deletion
+                st.session_state.tasks = load_checklist_tasks()
 
     # Form to add new task
     st.write("### Add New Task")
@@ -348,7 +352,8 @@ def show_checklist():
         if new_task:
             add_checklist_task(new_task)
             st.session_state.new_task = ""  # Clear the input field
-            st.session_state.tasks = load_checklist_tasks()  # Refresh the tasks
+            # Refresh the tasks
+            st.session_state.tasks = load_checklist_tasks()
             st.success("New task added successfully!")
 
 # Main function to run the app
