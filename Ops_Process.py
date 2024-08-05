@@ -116,7 +116,7 @@ def load_checklist_tasks():
         cur.close()
         conn.close()
 
-    tasks = [{"task": row[0], "completed": row[1]} for row in rows]
+    tasks = [{"task": row[0], "completed": bool(row[1])} for row in rows]
     return tasks
 
 # Function to add a new task to the checklist
@@ -154,10 +154,8 @@ def update_checklist_task(task, completed):
         cur.close()
         conn.close()
 
-    # Directly update the task in session state
-    for t in st.session_state.tasks:
-        if t["task"] == task:
-            t["completed"] = int(completed)
+    # Refresh task list
+    st.session_state.tasks = load_checklist_tasks()
 
 # Function to delete a task from the checklist
 def delete_checklist_task(task):
@@ -322,7 +320,7 @@ def show_checklist():
 
     tasks = st.session_state.tasks
 
-    # Calculate completion percentage based on the 'completed' column
+    # Calculate completion percentage
     completed_tasks = sum(task['completed'] for task in tasks)
     total_tasks = len(tasks)
     progress = completed_tasks / total_tasks if total_tasks > 0 else 0
@@ -336,14 +334,12 @@ def show_checklist():
         col1, col2 = st.columns([4, 1])
         with col1:
             task_title = task['task']
-            is_completed = st.checkbox(task_title, value=bool(task['completed']), key=task_title)
-            if is_completed != bool(task['completed']):
+            is_completed = st.checkbox(task_title, value=task['completed'], key=task_title)
+            if is_completed != task['completed']:
                 update_checklist_task(task_title, is_completed)
         with col2:
             if st.button("Delete", key=f"delete_{task_title}"):
                 delete_checklist_task(task_title)
-                # Refresh task list after deletion
-                st.session_state.tasks = load_checklist_tasks()
 
     # Form to add new task
     st.write("### Add New Task")
@@ -352,8 +348,7 @@ def show_checklist():
         if new_task:
             add_checklist_task(new_task)
             st.session_state.new_task = ""  # Clear the input field
-            # Refresh the tasks
-            st.session_state.tasks = load_checklist_tasks()
+            st.session_state.tasks = load_checklist_tasks()  # Refresh the tasks
             st.success("New task added successfully!")
 
 # Main function to run the app
