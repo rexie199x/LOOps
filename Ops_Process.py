@@ -415,7 +415,7 @@ def main():
             """,
             unsafe_allow_html=True
         )
-    elif choice == "Checklisst":
+    elif choice == "Checklist":
         show_checklist()
     else:
         show_processes(choice)
