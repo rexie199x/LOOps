@@ -1,4 +1,4 @@
-import streamlit as st
+\import streamlit as st
 import pandas as pd
 import psycopg2
 import os
@@ -24,7 +24,7 @@ def load_processes_data():
 
     cur = conn.cursor()
     try:
-        cur.execute("SELECT section, title, content FROM public.ops_processes")  # Change this line if using a schema
+        cur.execute("SELECT section, title, content FROM public.ops_processes")
         rows = cur.fetchall()
     except Exception as e:
         st.error(f"Error executing SQL query: {e}")
@@ -38,7 +38,7 @@ def load_processes_data():
         section, title, content = row
         if section not in data:
             data[section] = []
-        data[section].insert(0, {"title": title, "content": content})  # Insert at the beginning to ensure new processes appear at the top
+        data[section].insert(0, {"title": title, "content": content})
     return data
 
 # Function to save a new process to the database
@@ -57,7 +57,6 @@ def save_new_process(section, title, content):
         cur.close()
         conn.close()
 
-    # Immediately refresh data
     st.session_state.processes_data = load_processes_data()
 
 # Function to update an existing process in the database
@@ -77,7 +76,6 @@ def update_process(section, old_title, new_title, new_content):
         cur.close()
         conn.close()
 
-    # Immediately refresh data
     st.session_state.processes_data = load_processes_data()
 
 # Function to delete a process from the database
@@ -96,18 +94,71 @@ def delete_process(section, title):
         cur.close()
         conn.close()
 
-    # Immediately refresh data
     st.session_state.processes_data = load_processes_data()
+
+# Function to load checklist data from the database
+def load_checklist_data():
+    conn = get_db_connection()
+    if not conn:
+        return []
+
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT task, completed FROM public.ops_checklist")
+        rows = cur.fetchall()
+    except Exception as e:
+        st.error(f"Error executing SQL query: {e}")
+        rows = []
+    finally:
+        cur.close()
+        conn.close()
+
+    checklist = [{"task": row[0], "completed": row[1]} for row in rows]
+    return checklist
+
+# Function to save a new task to the database
+def save_new_task(task):
+    conn = get_db_connection()
+    if not conn:
+        return
+
+    cur = conn.cursor()
+    try:
+        cur.execute("INSERT INTO public.ops_checklist (task, completed) VALUES (%s, %s)", (task, 0))
+        conn.commit()
+    except Exception as e:
+        st.error(f"Error executing SQL query: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
+    st.session_state.checklist_data = load_checklist_data()
+
+# Function to update a task's completion status in the database
+def update_task_completion(task, completed):
+    conn = get_db_connection()
+    if not conn:
+        return
+
+    cur = conn.cursor()
+    try:
+        cur.execute("UPDATE public.ops_checklist SET completed = %s WHERE task = %s", (completed, task))
+        conn.commit()
+    except Exception as e:
+        st.error(f"Error executing SQL query: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
+    st.session_state.checklist_data = load_checklist_data()
 
 # Initialize the processes data in session state
 if 'processes_data' not in st.session_state:
     st.session_state.processes_data = load_processes_data()
 
-# Initialize new process fields in session state
-if 'new_process_title' not in st.session_state:
-    st.session_state.new_process_title = ""
-if 'new_process_content' not in st.session_state:
-    st.session_state.new_process_content = ""
+# Initialize checklist data in session state
+if 'checklist_data' not in st.session_state:
+    st.session_state.checklist_data = load_checklist_data()
 
 # Initialize reload flag
 if 'reload_flag' not in st.session_state:
@@ -116,6 +167,10 @@ if 'reload_flag' not in st.session_state:
 # Initialize add process form visibility
 if 'show_add_process_form' not in st.session_state:
     st.session_state.show_add_process_form = False
+
+# Initialize new task field in session state
+if 'new_task' not in st.session_state:
+    st.session_state.new_task = ""
 
 # Function to display processes for each section
 def show_processes(section):
@@ -187,7 +242,6 @@ def show_processes(section):
                     st.session_state[f"edit_mode_{section}_{start_idx + i}"] = False
                     st.session_state.reload_flag = True
                     st.success(f"Saved changes for {process['title']}")
-                    # Immediately refresh data
                     st.session_state.processes_data = load_processes_data()
 
             if st.session_state.get(f"confirm_delete_{section}_{start_idx + i}", False):
@@ -199,7 +253,6 @@ def show_processes(section):
                         st.session_state[f"confirm_delete_{section}_{start_idx + i}"] = False
                         st.session_state.reload_flag = True
                         st.success(f"Deleted {process['title']}")
-                        # Immediately refresh data
                         st.session_state.processes_data = load_processes_data()
                 with col2:
                     if st.button("No, cancel", key=f"confirm_no_{section}_{start_idx + i}"):
@@ -227,19 +280,52 @@ def show_processes(section):
         if st.button("Submit New Process", key=f"submit_{section}"):
             if st.session_state.new_process_title and st.session_state.new_process_content:
                 save_new_process(section, st.session_state.new_process_title, st.session_state.new_process_content)
-                # Clear the input fields after adding the process
                 st.session_state.new_process_title = ""
                 st.session_state.new_process_content = ""
                 st.session_state.reload_flag = True
                 st.success("New process added successfully!")
 
+# Function to display and manage the checklist
+def show_checklist():
+    st.title("Checklist")
+
+    if st.session_state.reload_flag:
+        st.session_state.checklist_data = load_checklist_data()
+        st.session_state.reload_flag = False
+
+    checklist = st.session_state.checklist_data
+
+    # Progress calculation
+    total_tasks = len(checklist)
+    completed_tasks = sum(task['completed'] for task in checklist)
+    progress_percentage = (completed_tasks / total_tasks) * 100 if total_tasks > 0 else 0
+
+    # Progress bar and percentage display
+    st.progress(progress_percentage / 100)
+    st.write(f"Completion: {progress_percentage:.2f}%")
+
+    # Display tasks with checkboxes
+    for task in checklist:
+        task_completed = st.checkbox(task['task'], value=bool(task['completed']))
+        if task_completed != bool(task['completed']):
+            update_task_completion(task['task'], int(task_completed))
+            st.session_state.reload_flag = True
+
+    # Add new task
+    st.write("### Add New Task")
+    st.session_state.new_task = st.text_input("Task", key="new_task")
+    if st.button("Add Task"):
+        if st.session_state.new_task:
+            save_new_task(st.session_state.new_task)
+            st.session_state.new_task = ""
+            st.session_state.reload_flag = True
+            st.success("New task added successfully!")
+
 # Main function to run the app
 def main():
-    # Add the logo at the top of the sidebar
     st.sidebar.image("https://lonelyoctopus.s3.eu-north-1.amazonaws.com/LOOPS.png", width=280)
     st.sidebar.title("Menu")
     
-    # Inject custom CSS
     st.markdown(
         """
         <style>
@@ -280,18 +366,19 @@ def main():
         unsafe_allow_html=True
     )
     
-    menu_options = ["Dashboard", "General Processes", "Discord Related Processes", "Templates", "Links"]
-    choice = st.sidebar.radio("Go to", menu_options, index=0)  # Default to "Dashboard" page
+    menu_options = ["Dashboard", "General Processes", "Discord Related Processes", "Templates", "Links", "Checklist"]
+    choice = st.sidebar.radio("Go to", menu_options, index=0)
 
     if choice == "Dashboard":
         st.markdown("<div class='custom-padding'></div>", unsafe_allow_html=True)
-        # Embed Looker Studio report
         st.write(
             """
             <iframe class="full-screen-iframe" src="https://lookerstudio.google.com/embed/reporting/c7e47d5f-2ed1-4c2a-b724-988a537a1690/page/rHc7D" allowfullscreen></iframe>
             """,
             unsafe_allow_html=True
         )
+    elif choice == "Checklist":
+        show_checklist()
     else:
         show_processes(choice)
 
