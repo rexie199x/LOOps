@@ -334,7 +334,7 @@ def show_checklist():
         col1, col2 = st.columns([4, 1])
         with col1:
             task_title = task['task']
-            is_completed = st.checkbox(task_title, value=task['completed'], key=task_title)
+            is_completed = st.checkbox(task_title, value=bool(task['completed']), key=task_title)
             if is_completed != bool(task['completed']):
                 update_checklist_task(task_title, is_completed)
                 # Refresh task list after update
