@@ -198,6 +198,10 @@ if 'show_add_process_form' not in st.session_state:
 if 'tasks' not in st.session_state:
     st.session_state.tasks = load_checklist_tasks()
 
+# Ensure 'new_task' key is initialized
+if 'new_task' not in st.session_state:
+    st.session_state.new_task = ""
+
 # Function to display processes for each section
 def show_processes(section):
     st.title(f"{section}")
