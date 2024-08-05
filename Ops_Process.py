@@ -24,7 +24,7 @@ def load_processes_data():
 
     cur = conn.cursor()
     try:
-        cur.execute("SELECT section, title, content FROM public.ops_processes")  # Change this line if using a schema
+        cur.execute("SELECT section, title, content FROM public.ops_processes")
         rows = cur.fetchall()
     except Exception as e:
         st.error(f"Error executing SQL query: {e}")
@@ -304,14 +304,12 @@ def show_checklist():
             st.session_state.reload_flag = True
 
     # Input for new task
-    with st.form(key="add_task_form"):
-        new_task = st.text_input("New Task", key="new_task_input")
-        submit_button = st.form_submit_button(label="Add Task")
-
-    if submit_button and new_task:
-        add_checklist_task(new_task)
-        st.session_state.new_task_input = ""  # Clear the input field
-        st.session_state.reload_flag = True
+    new_task = st.text_input("New Task", key="new_task_input")
+    if st.button("Add Task"):
+        if new_task:
+            add_checklist_task(new_task)
+            st.session_state.new_task_input = ""  # Reset the form input value
+            st.experimental_rerun()
 
 # Initialize the checklist data in session state
 if 'checklist_data' not in st.session_state:
