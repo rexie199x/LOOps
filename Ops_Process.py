@@ -154,8 +154,10 @@ def update_checklist_task(task, completed):
         cur.close()
         conn.close()
 
-    # Refresh task list
-    st.session_state.tasks = load_checklist_tasks()
+    # Directly update the task in session state
+    for t in st.session_state.tasks:
+        if t["task"] == task:
+            t["completed"] = int(completed)
 
 # Function to delete a task from the checklist
 def delete_checklist_task(task):
@@ -337,8 +339,6 @@ def show_checklist():
             is_completed = st.checkbox(task_title, value=bool(task['completed']), key=task_title)
             if is_completed != bool(task['completed']):
                 update_checklist_task(task_title, is_completed)
-                # Refresh task list after update
-                st.session_state.tasks = load_checklist_tasks()
         with col2:
             if st.button("Delete", key=f"delete_{task_title}"):
                 delete_checklist_task(task_title)
