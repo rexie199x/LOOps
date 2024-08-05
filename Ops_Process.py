@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import psycopg2
 import os
+from streamlit_sortables import drag_and_drop
 
 # Database connection
 def get_db_connection():
@@ -24,7 +25,7 @@ def load_processes_data():
 
     cur = conn.cursor()
     try:
-        cur.execute("SELECT section, title, content FROM public.ops_processes")
+        cur.execute("SELECT section, title, content FROM public.ops_processes")  # Change this line if using a schema
         rows = cur.fetchall()
     except Exception as e:
         st.error(f"Error executing SQL query: {e}")
@@ -98,6 +99,74 @@ def delete_process(section, title):
 
     # Immediately refresh data
     st.session_state.processes_data = load_processes_data()
+
+# Function to load checklist tasks from the database
+def load_checklist_tasks():
+    conn = get_db_connection()
+    if not conn:
+        return []
+
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT task, completed FROM public.ops_checklist ORDER BY id")  # Ensure tasks are ordered by id or another column
+        rows = cur.fetchall()
+    except Exception as e:
+        st.error(f"Error executing SQL query: {e}")
+        rows = []
+    finally:
+        cur.close()
+        conn.close()
+
+    tasks = [{"task": row[0], "completed": row[1]} for row in rows]
+    return tasks
+
+# Function to add a new task to the checklist
+def add_checklist_task(task, completed=False):
+    conn = get_db_connection()
+    if not conn:
+        return
+
+    cur = conn.cursor()
+    try:
+        cur.execute("INSERT INTO public.ops_checklist (task, completed) VALUES (%s, %s)", (task, int(completed)))
+        conn.commit()
+    except Exception as e:
+        st.error(f"Error executing SQL query: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
+# Function to update a task's completion status
+def update_checklist_task(task, completed):
+    conn = get_db_connection()
+    if not conn:
+        return
+
+    cur = conn.cursor()
+    try:
+        cur.execute("UPDATE public.ops_checklist SET completed = %s WHERE task = %s", (int(completed), task))
+        conn.commit()
+    except Exception as e:
+        st.error(f"Error executing SQL query: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
+# Function to delete a task from the checklist
+def delete_checklist_task(task):
+    conn = get_db_connection()
+    if not conn:
+        return
+
+    cur = conn.cursor()
+    try:
+        cur.execute("DELETE FROM public.ops_checklist WHERE task = %s", (task,))
+        conn.commit()
+    except Exception as e:
+        st.error(f"Error executing SQL query: {e}")
+    finally:
+        cur.close()
+        conn.close()
 
 # Initialize the processes data in session state
 if 'processes_data' not in st.session_state:
@@ -233,93 +302,57 @@ def show_processes(section):
                 st.session_state.reload_flag = True
                 st.success("New process added successfully!")
 
-# Function to load checklist data from the database
-def load_checklist_data():
-    conn = get_db_connection()
-    if not conn:
-        return []
-
-    cur = conn.cursor()
-    try:
-        cur.execute("SELECT task, completed FROM public.ops_checklist")
-        rows = cur.fetchall()
-    except Exception as e:
-        st.error(f"Error executing SQL query: {e}")
-        rows = []
-    finally:
-        cur.close()
-        conn.close()
-
-    data = [{"task": row[0], "completed": bool(row[1])} for row in rows]
-    return data
-
-# Function to add a new task to the checklist
-def add_checklist_task(task):
-    conn = get_db_connection()
-    if not conn:
-        return
-
-    cur = conn.cursor()
-    try:
-        cur.execute("INSERT INTO public.ops_checklist (task, completed) VALUES (%s, %s)", (task, 0))
-        conn.commit()
-    except Exception as e:
-        st.error(f"Error executing SQL query: {e}")
-    finally:
-        cur.close()
-        conn.close()
-
-# Function to update the completion status of a task
-def update_checklist_task(task, completed):
-    conn = get_db_connection()
-    if not conn:
-        return
-
-    cur = conn.cursor()
-    try:
-        cur.execute("UPDATE public.ops_checklist SET completed = %s WHERE task = %s", (int(completed), task))
-        conn.commit()
-    except Exception as e:
-        st.error(f"Error executing SQL query: {e}")
-    finally:
-        cur.close()
-        conn.close()
-
-# Function to display the checklist
+# Function to display checklist
 def show_checklist():
     st.title("Checklist")
 
-    if st.session_state.reload_flag:
-        st.session_state.checklist_data = load_checklist_data()
-        st.session_state.reload_flag = False
+    tasks = load_checklist_tasks()
+    
+    # Convert tasks to a format suitable for drag-and-drop
+    task_titles = [task['task'] for task in tasks]
 
-    checklist = st.session_state.checklist_data
+    # Drag-and-drop component
+    reordered_tasks = drag_and_drop(task_titles, direction="vertical")
 
-    # Display tasks with checkboxes
-    for i, item in enumerate(checklist):
-        task = item["task"]
-        completed = st.checkbox(task, value=item["completed"], key=f"checkbox_{i}")
-        if completed != item["completed"]:
-            update_checklist_task(task, completed)
-            st.session_state.reload_flag = True
+    # Show progress
+    completed_tasks = [task for task in tasks if task['completed']]
+    total_tasks = len(tasks)
+    progress = len(completed_tasks) / total_tasks if total_tasks > 0 else 0
+    st.progress(progress)
 
-    # Form to add a new task
-    with st.form(key="add_task_form"):
-        new_task = st.text_input("New Task", key="new_task_input")
-        submit_button = st.form_submit_button(label="Add Task")
-        
-        if submit_button and new_task:
+    # Display tasks with checkboxes and edit buttons
+    for task_title in reordered_tasks:
+        task = next(task for task in tasks if task['task'] == task_title)
+        col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+        with col1:
+            is_completed = st.checkbox(task_title, value=task['completed'])
+            if is_completed != task['completed']:
+                update_checklist_task(task_title, int(is_completed))
+                st.session_state.reload_flag = True
+        with col2:
+            if st.button("Edit", key=f"edit_{task_title}"):
+                st.session_state[f"edit_mode_{task_title}"] = True
+        with col3:
+            if st.button("Delete", key=f"delete_{task_title}"):
+                delete_checklist_task(task_title)
+                st.session_state.reload_flag = True
+
+        # Edit task mode
+        if st.session_state.get(f"edit_mode_{task_title}", False):
+            new_task_title = st.text_input("Edit task", value=task_title, key=f"edit_input_{task_title}")
+            if st.button("Save", key=f"save_{task_title}"):
+                update_checklist_task(task_title, int(is_completed))  # Assuming task title is a primary key
+                st.session_state[f"edit_mode_{task_title}"] = False
+                st.session_state.reload_flag = True
+
+    # Form to add new task
+    st.write("### Add New Task")
+    new_task = st.text_input("Task")
+    if st.button("Add Task"):
+        if new_task:
             add_checklist_task(new_task)
-            st.session_state['dummy'] = not st.session_state.get('dummy', False)  # Trigger a rerun
+            st.session_state.reload_flag = True
             st.success("New task added successfully!")
-
-# Initialize the checklist data in session state
-if 'checklist_data' not in st.session_state:
-    st.session_state.checklist_data = load_checklist_data()
-
-# Initialize dummy variable to trigger rerun
-if 'dummy' not in st.session_state:
-    st.session_state.dummy = True
 
 # Main function to run the app
 def main():
