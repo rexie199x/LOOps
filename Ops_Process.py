@@ -116,7 +116,7 @@ def load_checklist_tasks():
         cur.close()
         conn.close()
 
-    tasks = [{"task": row[0], "completed": bool(row[1])} for row in rows]
+    tasks = [{"task": row[0], "completed": row[1]} for row in rows]
     return tasks
 
 # Function to add a new task to the checklist
@@ -127,7 +127,7 @@ def add_checklist_task(task, completed=False):
 
     cur = conn.cursor()
     try:
-        cur.execute("INSERT INTO public.ops_checklist (task, completed) VALUES (%s, %s)", (task, int(completed)))
+        cur.execute("INSERT INTO public.ops_checklist (task, completed) VALUES (%s, %s)", (task, completed))
         conn.commit()
     except Exception as e:
         st.error(f"Error executing SQL query: {e}")
@@ -146,7 +146,7 @@ def update_checklist_task(task, completed):
 
     cur = conn.cursor()
     try:
-        cur.execute("UPDATE public.ops_checklist SET completed = %s WHERE task = %s", (int(completed), task))
+        cur.execute("UPDATE public.ops_checklist SET completed = %s WHERE task = %s", (completed, task))
         conn.commit()
     except Exception as e:
         st.error(f"Error executing SQL query: {e}")
@@ -321,9 +321,9 @@ def show_checklist():
     tasks = st.session_state.tasks
 
     # Calculate completion percentage
-    completed_tasks = sum(task['completed'] for task in tasks)
+    completed_tasks = [task for task in tasks if task['completed']]
     total_tasks = len(tasks)
-    progress = completed_tasks / total_tasks if total_tasks > 0 else 0
+    progress = len(completed_tasks) / total_tasks if total_tasks > 0 else 0
 
     # Display progress bar and percentage
     st.progress(progress)
@@ -334,21 +334,22 @@ def show_checklist():
         col1, col2 = st.columns([4, 1])
         with col1:
             task_title = task['task']
-            is_completed = st.checkbox(task_title, value=task['completed'], key=task_title)
+            is_completed = st.checkbox(task_title, value=task['completed'])
             if is_completed != task['completed']:
                 update_checklist_task(task_title, is_completed)
+                st.session_state.reload_flag = True
         with col2:
             if st.button("Delete", key=f"delete_{task_title}"):
                 delete_checklist_task(task_title)
+                st.session_state.reload_flag = True
 
     # Form to add new task
     st.write("### Add New Task")
-    new_task = st.text_input("Task", key="new_task")
+    new_task = st.text_input("Task")
     if st.button("Add Task"):
         if new_task:
             add_checklist_task(new_task)
-            st.session_state.new_task = ""  # Clear the input field
-            st.session_state.tasks = load_checklist_tasks()  # Refresh the tasks
+            st.session_state.reload_flag = True
             st.success("New task added successfully!")
 
 # Main function to run the app
