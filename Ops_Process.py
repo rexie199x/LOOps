@@ -334,22 +334,20 @@ def show_checklist():
         col1, col2 = st.columns([4, 1])
         with col1:
             task_title = task['task']
-            is_completed = st.checkbox(task_title, value=task['completed'])
+            is_completed = st.checkbox(task_title, value=task['completed'], key=task_title)
             if is_completed != task['completed']:
                 update_checklist_task(task_title, is_completed)
-                st.session_state.reload_flag = True
         with col2:
             if st.button("Delete", key=f"delete_{task_title}"):
                 delete_checklist_task(task_title)
-                st.session_state.reload_flag = True
 
     # Form to add new task
     st.write("### Add New Task")
-    new_task = st.text_input("Task")
+    new_task = st.text_input("Task", key="new_task")
     if st.button("Add Task"):
         if new_task:
             add_checklist_task(new_task)
-            st.session_state.reload_flag = True
+            st.session_state.new_task = ""  # Clear the input field
             st.success("New task added successfully!")
 
 # Main function to run the app
