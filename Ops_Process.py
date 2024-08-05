@@ -116,7 +116,7 @@ def load_checklist_tasks():
         cur.close()
         conn.close()
 
-    tasks = [{"task": row[0], "completed": bool(row[1])} for row in rows]
+    tasks = [{"task": row[0], "completed": row[1]} for row in rows]
     return tasks
 
 # Function to add a new task to the checklist
@@ -320,8 +320,8 @@ def show_checklist():
 
     tasks = st.session_state.tasks
 
-    # Calculate completion percentage
-    completed_tasks = sum(1 for task in tasks if task['completed'])
+    # Calculate completion percentage based on the 'completed' column
+    completed_tasks = sum(task['completed'] for task in tasks)
     total_tasks = len(tasks)
     progress = completed_tasks / total_tasks if total_tasks > 0 else 0
 
@@ -335,7 +335,7 @@ def show_checklist():
         with col1:
             task_title = task['task']
             is_completed = st.checkbox(task_title, value=task['completed'], key=task_title)
-            if is_completed != task['completed']:
+            if is_completed != bool(task['completed']):
                 update_checklist_task(task_title, is_completed)
                 # Refresh task list after update
                 st.session_state.tasks = load_checklist_tasks()
