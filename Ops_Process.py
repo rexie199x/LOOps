@@ -135,6 +135,9 @@ def add_checklist_task(task, completed=False):
         cur.close()
         conn.close()
 
+    # Refresh task list
+    st.session_state.tasks = load_checklist_tasks()
+
 # Function to update a task's completion status
 def update_checklist_task(task, completed):
     conn = get_db_connection()
@@ -151,6 +154,9 @@ def update_checklist_task(task, completed):
         cur.close()
         conn.close()
 
+    # Refresh task list
+    st.session_state.tasks = load_checklist_tasks()
+
 # Function to delete a task from the checklist
 def delete_checklist_task(task):
     conn = get_db_connection()
@@ -166,6 +172,9 @@ def delete_checklist_task(task):
     finally:
         cur.close()
         conn.close()
+
+    # Refresh task list
+    st.session_state.tasks = load_checklist_tasks()
 
 # Initialize the processes data in session state
 if 'processes_data' not in st.session_state:
@@ -184,6 +193,10 @@ if 'reload_flag' not in st.session_state:
 # Initialize add process form visibility
 if 'show_add_process_form' not in st.session_state:
     st.session_state.show_add_process_form = False
+
+# Initialize checklist tasks
+if 'tasks' not in st.session_state:
+    st.session_state.tasks = load_checklist_tasks()
 
 # Function to display processes for each section
 def show_processes(section):
@@ -305,13 +318,16 @@ def show_processes(section):
 def show_checklist():
     st.title("Checklist")
 
-    tasks = load_checklist_tasks()
+    tasks = st.session_state.tasks
 
-    # Show progress
+    # Calculate completion percentage
     completed_tasks = [task for task in tasks if task['completed']]
     total_tasks = len(tasks)
     progress = len(completed_tasks) / total_tasks if total_tasks > 0 else 0
+
+    # Display progress bar and percentage
     st.progress(progress)
+    st.write(f"Completion: {progress * 100:.2f}%")
 
     # Display tasks with checkboxes
     for task in tasks:
