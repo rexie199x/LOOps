@@ -116,7 +116,7 @@ def load_checklist_tasks():
         cur.close()
         conn.close()
 
-    tasks = [{"task": row[0], "completed": row[1]} for row in rows]
+    tasks = [{"task": row[0], "completed": bool(row[1])} for row in rows]
     return tasks
 
 # Function to add a new task to the checklist
@@ -127,7 +127,7 @@ def add_checklist_task(task, completed=False):
 
     cur = conn.cursor()
     try:
-        cur.execute("INSERT INTO public.ops_checklist (task, completed) VALUES (%s, %s)", (task, completed))
+        cur.execute("INSERT INTO public.ops_checklist (task, completed) VALUES (%s, %s)", (task, int(completed)))
         conn.commit()
     except Exception as e:
         st.error(f"Error executing SQL query: {e}")
@@ -146,7 +146,7 @@ def update_checklist_task(task, completed):
 
     cur = conn.cursor()
     try:
-        cur.execute("UPDATE public.ops_checklist SET completed = %s WHERE task = %s", (completed, task))
+        cur.execute("UPDATE public.ops_checklist SET completed = %s WHERE task = %s", (int(completed), task))
         conn.commit()
     except Exception as e:
         st.error(f"Error executing SQL query: {e}")
@@ -348,6 +348,7 @@ def show_checklist():
         if new_task:
             add_checklist_task(new_task)
             st.session_state.new_task = ""  # Clear the input field
+            st.session_state.tasks = load_checklist_tasks()  # Refresh the tasks
             st.success("New task added successfully!")
 
 # Main function to run the app
