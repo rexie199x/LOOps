@@ -24,7 +24,7 @@ def load_processes_data():
 
     cur = conn.cursor()
     try:
-        cur.execute("SELECT section, title, content FROM public.ops_processes")  # Change this line if using a schema
+        cur.execute("SELECT section, title, content FROM public.ops_processes")
         rows = cur.fetchall()
     except Exception as e:
         st.error(f"Error executing SQL query: {e}")
@@ -144,8 +144,7 @@ def show_processes(section):
             st.session_state.current_page -= 1
 
     def go_to_next_page():
-        if st.session_state.current_page < total_pages:
-            st.session_state.current_page += 1
+        if st.session_state.current_page < total_pages, st.session_state.current_page += 1
 
     start_idx = (st.session_state.current_page - 1) * items_per_page
     end_idx = start_idx + items_per_page
@@ -311,6 +310,8 @@ def show_checklist():
         if submit_button and new_task:
             add_checklist_task(new_task)
             st.session_state.reload_flag = True
+            st.success("New task added successfully!")
+            st.experimental_rerun()
 
 # Initialize the checklist data in session state
 if 'checklist_data' not in st.session_state:
