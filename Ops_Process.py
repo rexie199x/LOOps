@@ -99,6 +99,73 @@ def delete_process(section, title):
     # Immediately refresh data
     st.session_state.processes_data = load_processes_data()
 
+# Function to load checklist data from the database
+def load_checklist_data():
+    conn = get_db_connection()
+    if not conn:
+        return []
+
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT task, completed FROM public.ops_checklist")  # Change this line if using a schema
+        rows = cur.fetchall()
+    except Exception as e:
+        st.error(f"Error executing SQL query: {e}")
+        rows = []
+    finally:
+        cur.close()
+        conn.close()
+
+    return [{"task": row[0], "completed": row[1]} for row in rows]
+
+# Function to add a new task to the checklist
+def add_task(task):
+    conn = get_db_connection()
+    if not conn:
+        return
+
+    cur = conn.cursor()
+    try:
+        cur.execute("INSERT INTO public.ops_checklist (task, completed) VALUES (%s, %s)", (task, 0))
+        conn.commit()
+    except Exception as e:
+        st.error(f"Error executing SQL query: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
+# Function to update the completion status of a task
+def update_task_completion(task, completed):
+    conn = get_db_connection()
+    if not conn:
+        return
+
+    cur = conn.cursor()
+    try:
+        cur.execute("UPDATE public.ops_checklist SET completed = %s WHERE task = %s", (completed, task))
+        conn.commit()
+    except Exception as e:
+        st.error(f"Error executing SQL query: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
+# Function to delete a task from the checklist
+def delete_task(task):
+    conn = get_db_connection()
+    if not conn:
+        return
+
+    cur = conn.cursor()
+    try:
+        cur.execute("DELETE FROM public.ops_checklist WHERE task = %s", (task,))
+        conn.commit()
+    except Exception as e:
+        st.error(f"Error executing SQL query: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
 # Initialize the processes data in session state
 if 'processes_data' not in st.session_state:
     st.session_state.processes_data = load_processes_data()
@@ -233,6 +300,33 @@ def show_processes(section):
                 st.session_state.reload_flag = True
                 st.success("New process added successfully!")
 
+# Function to display the checklist
+def show_checklist():
+    st.title("Checklist")
+
+    # Load checklist data
+    checklist = load_checklist_data()
+
+    # Display the checklist
+    for item in checklist:
+        task = item["task"]
+        completed = item["completed"]
+        if st.checkbox(task, value=bool(completed)):
+            update_task_completion(task, 1)
+        else:
+            update_task_completion(task, 0)
+
+        if st.button(f"Delete {task}"):
+            delete_task(task)
+            st.experimental_rerun()
+
+    # Add a new task
+    new_task = st.text_input("New Task")
+    if st.button("Add Task"):
+        if new_task:
+            add_task(new_task)
+            st.experimental_rerun()
+
 # Main function to run the app
 def main():
     # Add the logo at the top of the sidebar
@@ -280,7 +374,7 @@ def main():
         unsafe_allow_html=True
     )
     
-    menu_options = ["Dashboard", "General Processes", "Discord Related Processes", "Templates", "Links"]
+    menu_options = ["Dashboard", "General Processes", "Discord Related Processes", "Templates", "Links", "Checklist"]
     choice = st.sidebar.radio("Go to", menu_options, index=0)  # Default to "Dashboard" page
 
     if choice == "Dashboard":
@@ -292,6 +386,8 @@ def main():
             """,
             unsafe_allow_html=True
         )
+    elif choice == "Checklist":
+        show_checklist()
     else:
         show_processes(choice)
 
