@@ -305,26 +305,36 @@ def show_checklist():
     st.title("Checklist")
 
     # Load checklist data
-    checklist = load_checklist_data()
+    if 'checklist' not in st.session_state:
+        st.session_state.checklist = load_checklist_data()
+
+    checklist = st.session_state.checklist
 
     # Display the checklist
-    for item in checklist:
+    for idx, item in enumerate(checklist):
         task = item["task"]
         completed = item["completed"]
-        if st.checkbox(task, value=bool(completed)):
+        if st.checkbox(task, value=bool(completed), key=f"task_{idx}"):
             update_task_completion(task, 1)
+            checklist[idx]['completed'] = 1
         else:
             update_task_completion(task, 0)
+            checklist[idx]['completed'] = 0
 
-        if st.button(f"Delete {task}"):
+        if st.button(f"Delete {task}", key=f"delete_{idx}"):
             delete_task(task)
+            st.session_state.checklist = [i for i in checklist if i['task'] != task]
             st.experimental_rerun()
 
     # Add a new task
-    new_task = st.text_input("New Task")
-    if st.button("Add Task"):
+    new_task = st.text_input("New Task", key="new_task")
+    if st.button("Add Task", key="add_task"):
         if new_task:
             add_task(new_task)
+            if 'checklist' in st.session_state:
+                st.session_state.checklist.append({"task": new_task, "completed": 0})
+            else:
+                st.session_state.checklist = [{"task": new_task, "completed": 0}]
             st.experimental_rerun()
 
 # Main function to run the app
