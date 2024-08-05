@@ -144,7 +144,8 @@ def show_processes(section):
             st.session_state.current_page -= 1
 
     def go_to_next_page():
-        if st.session_state.current_page < total_pages, st.session_state.current_page += 1
+        if st.session_state.current_page < total_pages:
+            st.session_state.current_page += 1
 
     start_idx = (st.session_state.current_page - 1) * items_per_page
     end_idx = start_idx + items_per_page
