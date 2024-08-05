@@ -305,12 +305,12 @@ def show_checklist():
 
     # Input for new task
     new_task = st.text_input("New Task", key="new_task_input")
-    if st.button("Add Task", key="add_task_button"):
-        if new_task:
-            add_checklist_task(new_task)
-            st.session_state.new_task_input = ""  # Clear the input field
-            st.session_state.reload_flag = True
-            st.success("New task added successfully!")
+    add_task_flag = st.button("Add Task", key="add_task_button")
+    if add_task_flag and new_task:
+        add_checklist_task(new_task)
+        st.session_state.new_task_input = ""  # Clear the input field
+        st.session_state.reload_flag = True
+        st.success("New task added successfully!")
 
 # Initialize the checklist data in session state
 if 'checklist_data' not in st.session_state:
