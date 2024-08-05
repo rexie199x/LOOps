@@ -302,13 +302,15 @@ def show_checklist():
         if new_completed != completed:
             update_task_completion(task_name, new_completed)
 
-    st.session_state.new_task = st.text_input("New Task", key="new_task")
-    if st.button("Add Task", key="add_task"):
-        if st.session_state.new_task:
-            save_new_task(st.session_state.new_task)
-            st.session_state.new_task = ""
+    new_task = st.text_input("New Task", key="new_task_input")
+    if new_task:
+        if st.button("Add Task", key="add_task"):
+            save_new_task(new_task)
             st.session_state.reload_flag = True
             st.success("New task added successfully!")
+            # Clear the input field
+            st.session_state.new_task_input = ""
+
 
 # Main function to run the app
 def main():
@@ -372,4 +374,7 @@ def main():
         show_processes(choice)
 
 if __name__ == "__main__":
+    if 'new_task_input' not in st.session_state:
+        st.session_state.new_task_input = ""
     main()
+
