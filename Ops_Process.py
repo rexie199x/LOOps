@@ -113,10 +113,9 @@ def load_checklist_data():
         cur.close()
         conn.close()
 
-    checklist = [{"task": row[0], "completed": row[1]} for row in rows]
-    return checklist
+    return [{"task": row[0], "completed": bool(row[1])} for row in rows]
 
-# Function to save a new task to the database
+# Function to save a new task to the checklist
 def save_new_task(task):
     conn = get_db_connection()
     if not conn:
@@ -124,7 +123,7 @@ def save_new_task(task):
 
     cur = conn.cursor()
     try:
-        cur.execute("INSERT INTO public.ops_checklist (task, completed) VALUES (%s, %s)", (task, 0))
+        cur.execute("INSERT INTO public.ops_checklist (task, completed) VALUES (%s, %s)", (task, False))
         conn.commit()
     except Exception as e:
         st.error(f"Error executing SQL query: {e}")
@@ -134,7 +133,7 @@ def save_new_task(task):
 
     st.session_state.checklist_data = load_checklist_data()
 
-# Function to update a task's completion status in the database
+# Function to update a task's completion status
 def update_task_completion(task, completed):
     conn = get_db_connection()
     if not conn:
@@ -152,23 +151,25 @@ def update_task_completion(task, completed):
 
     st.session_state.checklist_data = load_checklist_data()
 
-# Initialize the processes data in session state
+# Initialize session state data
 if 'processes_data' not in st.session_state:
     st.session_state.processes_data = load_processes_data()
 
-# Initialize checklist data in session state
 if 'checklist_data' not in st.session_state:
     st.session_state.checklist_data = load_checklist_data()
 
-# Initialize reload flag
+if 'new_process_title' not in st.session_state:
+    st.session_state.new_process_title = ""
+
+if 'new_process_content' not in st.session_state:
+    st.session_state.new_process_content = ""
+
 if 'reload_flag' not in st.session_state:
     st.session_state.reload_flag = False
 
-# Initialize add process form visibility
 if 'show_add_process_form' not in st.session_state:
     st.session_state.show_add_process_form = False
 
-# Initialize new task field in session state
 if 'new_task' not in st.session_state:
     st.session_state.new_task = ""
 
@@ -182,12 +183,10 @@ def show_processes(section):
     
     processes = st.session_state.processes_data.get(section, [])
 
-    # Search bar
     search_query = st.text_input("Search for an article:")
     if search_query:
         processes = [p for p in processes if search_query.lower() in p['title'].lower()]
 
-    # Pagination logic
     items_per_page = 10
     total_pages = len(processes) // items_per_page + (1 if len(processes) % items_per_page > 0 else 0)
 
@@ -206,7 +205,6 @@ def show_processes(section):
     end_idx = start_idx + items_per_page
     page_processes = processes[start_idx:end_idx]
 
-    # Inject custom CSS for title size
     st.markdown(
         """
         <style>
@@ -219,7 +217,6 @@ def show_processes(section):
         unsafe_allow_html=True
     )
 
-    # Display processes
     for i, process in enumerate(page_processes):
         expander = st.expander(f"{process['title']}", expanded=False)
         with expander:
@@ -258,7 +255,6 @@ def show_processes(section):
                     if st.button("No, cancel", key=f"confirm_no_{section}_{start_idx + i}"):
                         st.session_state[f"confirm_delete_{section}_{start_idx + i}"] = False
 
-    # Pagination controls at the bottom
     if total_pages > 1:
         col1, col2, col3 = st.columns([1, 3, 1])
         with col1:
@@ -268,11 +264,9 @@ def show_processes(section):
         with col3:
             st.button('➡', on_click=go_to_next_page, key="next_button")
 
-    # Button to show the add process form
     if st.button("Add New Process"):
         st.session_state.show_add_process_form = not st.session_state.show_add_process_form
 
-    # Conditionally show the add process form
     if st.session_state.show_add_process_form:
         st.write("### Add New Process")
         st.session_state.new_process_title = st.text_input("New Process Title", key=f"new_title_{section}")
@@ -285,7 +279,7 @@ def show_processes(section):
                 st.session_state.reload_flag = True
                 st.success("New process added successfully!")
 
-# Function to display and manage the checklist
+# Function to display the checklist
 def show_checklist():
     st.title("Checklist")
 
@@ -293,28 +287,23 @@ def show_checklist():
         st.session_state.checklist_data = load_checklist_data()
         st.session_state.reload_flag = False
 
-    checklist = st.session_state.checklist_data
+    checklist_data = st.session_state.checklist_data
 
-    # Progress calculation
-    total_tasks = len(checklist)
-    completed_tasks = sum(task['completed'] for task in checklist)
-    progress_percentage = (completed_tasks / total_tasks) * 100 if total_tasks > 0 else 0
+    total_tasks = len(checklist_data)
+    completed_tasks = sum(1 for task in checklist_data if task['completed'])
 
-    # Progress bar and percentage display
-    st.progress(progress_percentage / 100)
-    st.write(f"Completion: {progress_percentage:.2f}%")
+    progress = 0 if total_tasks == 0 else completed_tasks / total_tasks
+    st.progress(progress)
 
-    # Display tasks with checkboxes
-    for task in checklist:
-        task_completed = st.checkbox(task['task'], value=bool(task['completed']))
-        if task_completed != bool(task['completed']):
-            update_task_completion(task['task'], int(task_completed))
-            st.session_state.reload_flag = True
+    for i, task in enumerate(checklist_data):
+        task_name = task['task']
+        completed = task['completed']
+        new_completed = st.checkbox(task_name, value=completed, key=f"task_{i}")
+        if new_completed != completed:
+            update_task_completion(task_name, new_completed)
 
-    # Add new task
-    st.write("### Add New Task")
-    st.session_state.new_task = st.text_input("Task", key="new_task")
-    if st.button("Add Task"):
+    st.session_state.new_task = st.text_input("New Task", key="new_task")
+    if st.button("Add Task", key="add_task"):
         if st.session_state.new_task:
             save_new_task(st.session_state.new_task)
             st.session_state.new_task = ""
