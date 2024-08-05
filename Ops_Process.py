@@ -310,13 +310,16 @@ def show_checklist():
         
         if submit_button and new_task:
             add_checklist_task(new_task)
-            st.session_state.reload_flag = True
+            st.session_state['dummy'] = not st.session_state.get('dummy', False)  # Trigger a rerun
             st.success("New task added successfully!")
-            st.experimental_rerun()
 
 # Initialize the checklist data in session state
 if 'checklist_data' not in st.session_state:
     st.session_state.checklist_data = load_checklist_data()
+
+# Initialize dummy variable to trigger rerun
+if 'dummy' not in st.session_state:
+    st.session_state.dummy = True
 
 # Main function to run the app
 def main():
