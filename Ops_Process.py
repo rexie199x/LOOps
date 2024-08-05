@@ -320,14 +320,7 @@ def show_checklist():
 
     tasks = st.session_state.tasks
 
-    # Calculate completion percentage based on the 'completed' column
-    completed_tasks = sum(task['completed'] for task in tasks)
-    total_tasks = len(tasks)
-    progress = completed_tasks / total_tasks if total_tasks > 0 else 0
-
-    # Display progress bar and percentage
-    st.progress(progress)
-    st.write(f"Completion: {progress * 100:.2f}%")
+    
 
     # Display tasks with checkboxes
     for task in tasks:
