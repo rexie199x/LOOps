@@ -304,11 +304,11 @@ def show_checklist():
             st.session_state.reload_flag = True
 
     # Input for new task
-    new_task = st.text_input("New Task", key="new_task")
-    if st.button("Add Task"):
+    new_task = st.text_input("New Task", key="new_task_input")
+    if st.button("Add Task", key="add_task_button"):
         if new_task:
             add_checklist_task(new_task)
-            st.session_state.new_task = ""  # Clear the input field
+            st.session_state.new_task_input = ""  # Clear the input field
             st.session_state.reload_flag = True
             st.success("New task added successfully!")
 
@@ -316,9 +316,9 @@ def show_checklist():
 if 'checklist_data' not in st.session_state:
     st.session_state.checklist_data = load_checklist_data()
 
-# Ensure 'new_task' is in session state
-if 'new_task' not in st.session_state:
-    st.session_state.new_task = ""
+# Ensure 'new_task_input' is in session state
+if 'new_task_input' not in st.session_state:
+    st.session_state.new_task_input = ""
 
 # Main function to run the app
 def main():
