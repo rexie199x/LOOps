@@ -410,7 +410,7 @@ def main():
         unsafe_allow_html=True
     )
     
-    menu_options = ["Dashboard", "General Processes", "Discord Related Processes", "Templates", "Links", "Checklist"]
+    menu_options = ["Dashboard", "General Processes", "Discord Related Processes", "Templates", "Links"]
     choice = st.sidebar.radio("Go to", menu_options, index=0)  # Default to "Dashboard" page
 
     if choice == "Dashboard":
