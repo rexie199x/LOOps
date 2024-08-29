@@ -418,7 +418,7 @@ def main():
         # Embed Looker Studio report
         st.write(
             """
-            <iframe width="600" height="450" src="https://lookerstudio.google.com/embed/reporting/d3b5906b-d484-41c6-b925-b0105be21448/page/rHc7D" frameborder="0" style="border:0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+            <iframe class="full-screen-iframe" src="https://lookerstudio.google.com/embed/reporting/d3b5906b-d484-41c6-b925-b0105be21448/page/rHc7D" frameborder="0" style="border:0" allowfullscreen></iframe>
             """,
             unsafe_allow_html=True
         )
